@@ -1,0 +1,61 @@
+{
+  "name": "go-prof-labs",
+  "dockerFile": "Dockerfile",
+  "context": "..",
+  "build": {
+    "args": {
+      "VARIANT": "1.24",
+      "UID": "1000",
+      "GID": "1000"
+    }
+  },
+  "remoteUser": "vscode",
+  "workspaceFolder": "/workspaces/go-prof-labs",
+  "mounts": [
+    "type=volume,source=go-mod-cache,target=/go/pkg/mod",
+    "type=volume,source=go-build-cache,target=/home/vscode/.cache/go-build"
+  ],
+  "runArgs": [
+    "--cap-add=SYS_PTRACE",
+    "--security-opt=seccomp=unconfined"
+  ],
+  "features": {},
+  "forwardPorts": [
+    6060,
+    18080,
+    18081,
+    18082
+  ],
+  "portsAttributes": {
+    "6060": {
+      "label": "pprof/http server :6060",
+      "onAutoForward": "notify"
+    },
+    "18080": {
+      "label": "pprof CPU UI",
+      "onAutoForward": "openBrowser"
+    },
+    "18081": {
+      "label": "pprof HEAP UI",
+      "onAutoForward": "openBrowser"
+    },
+    "18082": {
+      "label": "pprof CPU (server) UI",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "ms-vscode.makefile-tools",
+        "editorconfig.editorconfig",
+        "eamodio.gitlens",
+        "streetsidesoftware.code-spell-checker",
+        "redhat.vscode-yaml",
+        "yzhang.markdown-all-in-one"
+      ]
+    }
+  }
+}
