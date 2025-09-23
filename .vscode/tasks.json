@@ -1,0 +1,78 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "server:run (background)",
+      "type": "shell",
+      "command": "make run-server",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": [
+          {
+            "regexp": ".",
+            "file": 1,
+            "location": 2,
+            "message": 0
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*listening on .*\\(pprof endpoints at /debug/pprof\\).*",
+          "endsPattern": ".*listening on .*\\(pprof endpoints at /debug/pprof\\).*"
+        }
+      },
+      "detail": "pprof付きHTTPサーバをバックグラウンドで起動（:6060）"
+    },
+    {
+      "label": "Step 1: CPUプロファイル（ベンチ→pprof UI）",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "command": "bash -lc 'set -e; make bench-cpu; make pprof-cpu'",
+      "detail": "BenchmarkFib の CPU プロファイルを作成し、pprof UI を :18080 で起動（/ui/）。"
+    },
+    {
+      "label": "Step 2: ヒーププロファイル（割当/保持の確認→pprof UI）",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "command": "bash -lc 'set -e; make run-mem; make pprof-heap'",
+      "detail": "メモリ大量割当→ heap.pprof を :18081 で起動（/ui/）。"
+    },
+    {
+      "label": "Step 3: 同期待ちの可視化（Block/Mutex/CPU）",
+      "type": "shell",
+      "dependsOn": [
+        "server:run (background)"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "command": "bash -lc '\nset -e\n( sleep 1; curl -s \"http://localhost:6060/work/contention?iter=400000&holdNs=10000\" >/dev/null ) &\nGO111MODULE=on go tool pprof -http=0.0.0.0:18082 http://localhost:6060/debug/pprof/profile?seconds=20\n'",
+      "detail": "サーバ起動→負荷投入→CPUプロファイルを :18082 で UI 表示（/ui/）。"
+    },
+    {
+      "label": "Step 4: 実行トレース（go tool trace UI）",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "command": "bash -lc 'set -e; make trace'",
+      "detail": "go test -trace → go tool trace で UI 起動。"
+    },
+    {
+      "label": "Cleanup: 生成物の削除",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "command": "bash -lc 'make clean'",
+      "detail": "pprofやtrace.outなどの生成物を削除。"
+    }
+  ]
+}
