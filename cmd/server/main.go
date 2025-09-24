@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	pp "net/http/pprof"
 	"os"
 	"runtime"
 	"strconv"
 	"time"
-
-	_ "net/http/pprof" // /debug/pprof
 
 	"sugiyan97/go-prof-labs/internal/workload"
 )
@@ -28,6 +27,14 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+
+	// ---- pprof: 自前 mux に明示登録（DefaultServeMux だけに登録される問題への対処） ----
+	mux.HandleFunc("/debug/pprof/", pp.Index)
+	mux.HandleFunc("/debug/pprof/cmdline", pp.Cmdline)
+	mux.HandleFunc("/debug/pprof/profile", pp.Profile)
+	mux.HandleFunc("/debug/pprof/symbol", pp.Symbol)
+	mux.HandleFunc("/debug/pprof/trace", pp.Trace)
+	// -----------------------------------------------------------------------------
 
 	mux.HandleFunc("/work/cpu", func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
