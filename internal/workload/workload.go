@@ -63,6 +63,24 @@ type HotMutex struct {
 	data int
 }
 
+func (h *HotMutex) WorkWithContentionParallel(workers, iter, holdNs int) int {
+	var wg sync.WaitGroup
+	wg.Add(workers)
+	for w := 0; w < workers; w++ {
+		go func() {
+			for i := 0; i < iter; i++ {
+				h.mu.Lock()
+				busyWait(holdNs) // ロック保持時間を長めにして競合を誘発
+				h.data++
+				h.mu.Unlock()
+			}
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+	return h.data
+}
+
 func (h *HotMutex) WorkWithContention(iter, holdNs int) int {
 	for i := 0; i < iter; i++ {
 		h.mu.Lock()

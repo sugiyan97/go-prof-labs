@@ -57,9 +57,16 @@ func main() {
 		q := r.URL.Query()
 		iter := atoiDefault(q.Get("iter"), 10000)
 		holdNs := atoiDefault(q.Get("holdNs"), 5000)
+		workers := atoiDefault(q.Get("workers"), 1) // ★ 追加：並列数
 		h := &workload.HotMutex{}
-		got := h.WorkWithContention(iter, holdNs)
-		fmt.Fprintf(w, "contention ok data=%d\n", got)
+
+		var got int
+		if workers > 1 {
+			got = h.WorkWithContentionParallel(workers, iter, holdNs) // 競合を作る
+		} else {
+			got = h.WorkWithContention(iter, holdNs) // 従来の単発
+		}
+		fmt.Fprintf(w, "contention ok data=%d (workers=%d)\n", got, workers)
 	})
 
 	mux.HandleFunc("/work/leak", func(w http.ResponseWriter, r *http.Request) {
