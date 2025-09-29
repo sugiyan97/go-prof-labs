@@ -53,7 +53,7 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "command": "bash -lc '\nset -e\n# pprof エンドポイントの起動待ち\nfor i in {1..40}; do curl -fsS http://localhost:6060/debug/pprof/ >/dev/null && break || sleep 0.25; done\n# 競合を発生させてから CPU プロファイル取得\n( curl -fsS \"http://localhost:6060/work/contention?iter=400000&holdNs=10000\" >/dev/null ) &\nGO111MODULE=on go tool pprof -http=0.0.0.0:18082 http://localhost:6060/debug/pprof/profile?seconds=20\n'",
+      "command": "bash -lc '\nset -e\n# pprof 起動待ち\nfor i in {1..40}; do curl -fsS http://localhost:6060/debug/pprof/ >/dev/null && break || sleep 0.25; done\n# 競合を発生（並列16、ロック保持 50µs、各 20k 回）\ncurl -fsS \"http://localhost:6060/work/contention?workers=16&iter=20000&holdNs=50000\" >/dev/null &\n# Mutex プロファイルの UI を開く（サンプルは随時集計される）\nGO111MODULE=on go tool pprof -http=0.0.0.0:18084 http://localhost:6060/debug/pprof/mutex\n'",
       "detail": "サーバ起動→pprof起動確認→負荷投入→CPUプロファイルを :18082 で表示（/ui/）。"
     },
     {
